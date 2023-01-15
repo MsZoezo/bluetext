@@ -5,6 +5,7 @@
 #include "console.h"
 #include "messages/systemMessage.h"
 #include "messages/userMessage.h"
+#include "messages/errorMessage.h"
 
 Console::Console(MessageCollection* messageCollection) {
 	this->messageCollection = messageCollection;
@@ -98,7 +99,11 @@ void Console::onKeyEvent(KEY_EVENT_RECORD event) {
 	}
 
 	if(event.wVirtualKeyCode == 13) {
-		if(this->inputBuffer.length() == 0) return;
+		if(this->inputBuffer.length() == 0) {
+			this->messageCollection->push(new ErrorMessage("Can't send empty message."));
+			this->redrawMessageArea();
+			return;
+		}
 
 		std::string message = this->inputBuffer.retrieve(100);
 		this->messageCollection->push(new UserMessage(message, "TestUser"));

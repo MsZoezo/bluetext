@@ -6,6 +6,7 @@
 #define BLUETEXT_SYSTEMMESSAGE_H
 
 #include "message.h"
+#include <fmt/format.h>
 
 class SystemMessage : public Message {
 public:
