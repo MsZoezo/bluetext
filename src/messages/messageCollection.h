@@ -18,6 +18,8 @@ public:
 	Message* operator[](int index);
 	void push(Message* message);
 	int size();
+
+	Message* at(int index);
 };
 
 

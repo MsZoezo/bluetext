@@ -23,3 +23,7 @@ void MessageCollection::push(Message* message) {
 int MessageCollection::size() {
 	return this->messages.size();
 }
+
+Message* MessageCollection::at(int index) {
+	return this->messages[index];
+}
