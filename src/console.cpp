@@ -126,12 +126,12 @@ void Console::redraw() {
 	fmt::print("\x1b[2J");
 
 	fmt::print("\x1b[1;1H");
-	fmt::print("\x1b[107m{}\x1b[0m", std::string(this->size.X, ' '));
+	fmt::print("{}", std::string(this->size.X, 220));
 
 	std::string title = "BlueText";
 
-	fmt::print("\x1b[1;{}H", (this->size.X - title.length()) / 2);
-	fmt::print(" {} ", title);
+	fmt::print("\x1b[1;{}H", (this->size.X - title.length() + 4) / 2);
+	fmt::print("{:c}\x1b[38;2;167;199;231m {} \x1b[0m{:c}", 219, title, 219);
 
 	fmt::print("\x1b[{};1H", this->size.Y - 1);
 	fmt::print("{}", std::string(this->size.X, 223));
