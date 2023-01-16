@@ -18,6 +18,7 @@ Message* MessageCollection::operator[](int index) {
 
 void MessageCollection::push(Message* message) {
 	this->messages.push_back(message);
+	this->collectionChanged = true;
 }
 
 int MessageCollection::size() {
@@ -26,4 +27,12 @@ int MessageCollection::size() {
 
 Message* MessageCollection::at(int index) {
 	return this->messages[index];
+}
+
+bool MessageCollection::hasChanged() {
+	if(this->collectionChanged) {
+		this->collectionChanged = false;
+		return true;
+	}
+	return false;
 }

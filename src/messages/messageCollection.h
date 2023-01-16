@@ -11,6 +11,7 @@
 class MessageCollection {
 private:
 	std::vector<Message*> messages;
+	bool collectionChanged = false;
 
 public:
 	~MessageCollection();
@@ -18,6 +19,7 @@ public:
 	Message* operator[](int index);
 	void push(Message* message);
 	int size();
+	bool hasChanged();
 
 	Message* at(int index);
 };

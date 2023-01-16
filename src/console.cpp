@@ -44,6 +44,9 @@ Console::Console(MessageCollection* messageCollection) {
 }
 
 Console::~Console() {
+	// final redraw for error messages;
+	this->redraw();
+
 	if(SetConsoleMode(this->in, this->oldMode) == 0) {
 		fmt::print(fg(fmt::color::red), "FATAL - Failed to reset console mode. Error -> {}", GetLastError());
 		exit(1);
