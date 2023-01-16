@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fmt/core.h>
 
-#include "clients/client.h"
+#include "clients/hostClient.h"
 #include "messages/messageCollection.h"
 #include "messages/errorMessage.h"
 #include "console.h"
@@ -12,10 +12,12 @@ int main() {
 	MessageCollection collection;
 
 	Console console(&collection);
-	Client client(&collection);
+	HostClient client(&collection);
 
 	for(;;) {
 		console.handleInput();
+
+		if(collection.hasChanged()) console.redrawMessageArea();
 
 		Sleep(100);
 	}

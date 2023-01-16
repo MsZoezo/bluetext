@@ -40,8 +40,6 @@ HostClient::HostClient(MessageCollection *messageCollection) : Client(messageCol
 		exit(1);
 	}
 
-	this->ip = hint.btAddr;
-
 	GUID mServiceGuid = {0x00001101, 0x0000, 0x1000, 0x66, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB}; // Can be anything
 
 	WSAQUERYSET wsaQuery = {0};
@@ -61,13 +59,19 @@ HostClient::HostClient(MessageCollection *messageCollection) : Client(messageCol
 	wsaQuery.lpcsaBuffer = &addrInfo;
 	WSASetService(&wsaQuery, RNRSERVICE_REGISTER, 0);
 
-	std::thread thread(&HostClient::acceptRemotes, this);
-	thread.detach();
+	this->acceptingThread = new std::thread(&HostClient::acceptRemotes, this);
+
+	this->messageCollection->push(new SystemMessage(fmt::format("Ready for connections, ip is {:#016X}", hint.btAddr)));
 }
 
 void HostClient::acceptRemotes() {
 	SOCKET acceptSocket = accept(this->hostSocket, NULL, 0);
 
 	this->messageCollection->push(new SystemMessage("User connected!"));
+}
+
+HostClient::~HostClient() {
+	this->acceptingThread->detach();
+	delete this->acceptingThread;
 }
 

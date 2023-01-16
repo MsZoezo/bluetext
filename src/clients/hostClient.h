@@ -14,6 +14,7 @@
 class HostClient : public Client {
 private:
 	SOCKET hostSocket;
+	std::thread* acceptingThread;
 
 	void acceptRemotes();
 
