@@ -1,6 +1,10 @@
 #include <iostream>
+#include "console.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Console console;
+
+    std::cout << "Hello World" << std::endl;
+
     return 0;
 }
