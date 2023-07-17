@@ -1,10 +1,10 @@
 #include <iostream>
 #include "console.h"
 
+#include <windows.h>
+
 int main() {
     Console console;
-
-    std::cout << "Hello World" << std::endl;
 
     bool running = true;
 
@@ -15,6 +15,8 @@ int main() {
         }
 
         console.handleEvents();
+
+        if(console.hasMessagesChanged()) console.redrawMessageArea();
     }
 
     return 0;
