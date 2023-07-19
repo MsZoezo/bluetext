@@ -26,7 +26,7 @@ Console::Console() {
 
     this->inputBuffer = new InputBuffer(100);
 
-    this->redrawFull();
+    this->render(true);
 }
 
 Console::~Console() {
@@ -102,34 +102,39 @@ void Console::onResizeEvent(_WINDOW_BUFFER_SIZE_RECORD event) {
     this->resized = true;
 }
 
-void Console::redrawFull() {
-    // Move to the top left corner.
-    std::cout << "\x1b[1;1H";
-    std::cout << std::string(this->width, 223) << std::endl;
+bool Console::shouldQuit() {
+    return quitable;
+}
+
+void Console::render(bool force) {
+    if(this->resized || force) this->renderDecorations();
+    if(this->resized || this->messagesChanged || force) this->renderMessageArea();
+    if(this->resized || this->inputBufferChanged || force) this->renderInputArea();
+
+    this->resized = false, this->messagesChanged = false, this->inputBufferChanged = false;
+}
+
+void Console::renderDecorations() {
+    this->moveTo(1, 1);
+    std::cout<< std::string(this->width, 223);
 
     std::string name = "BlueText";
     int pos = this->width / 2 - (name.length() + 2) / 2;
 
-    std::cout << std::format("\x1b[1;{}H", pos) << (char) 221 << name << (char) 222 << std::endl;
+    this->moveTo(pos, 1);
+    std::cout << (char) 221 << "\x1b[1m\x1b[38;2;162;193;224m" << name << "\x1b[0m" << (char) 222;
 
-    this->redrawMessageArea();
-    this->redrawInputArea();
-
-    // If we've rerendered it already we just pretend nothings changed hehe
-    this->messagesChanged = false;
-    this->inputBufferChanged = false;
+    this->moveTo(1, this->height - 1);
+    std::cout << std::string(this->width, 223);
 }
 
-void Console::redrawMessageArea() {
-    int capacity = this->width * (this->height - 3);
-
-    std::cout << std::format("\x1b[2;1H{}", std::string(capacity, ' '));
+void Console::renderMessageArea() {
+    this->deleteLines(1, 2, this->height - 3);
+    this->moveTo(1, 2);
 
     std::string printable;
     int index = this->messages.size() - 1;
-
     int lines = this->height - 3;
-
 
     while(lines > 0 && index >= 0) {
         Message* message = messages.at(index);
@@ -149,47 +154,35 @@ void Console::redrawMessageArea() {
         lines = lines - usedLines;
     }
 
-    std::cout << "\x1b[2;1H" << printable;
+    std::cout << printable;
 }
 
-void Console::redrawInputArea() {
-    std::string buffer = this->inputBuffer->retrieve(this->width);
+void Console::renderInputArea() {
+    bool typed = false;
+    std::string buffer = "Start typing...";
 
-    std::string position = std::format("\x1b[{};1H", this->height);
+    std::string lengthText = std::format(" {}/{} ", this->inputBuffer->getLength(), this->inputBuffer->getMaxLength());
+    int textPos = this->width - lengthText.length();
 
-    std::cout << position << std::string(this->width, ' ') << position << buffer;
+    if(this->inputBuffer->getLength() != 0) {
+        buffer = this->inputBuffer->retrieve(this->width - lengthText.length() - 2);
+        typed = true;
+    }
 
-    std::string length = std::format("{}/{}", inputBuffer->getLength(), inputBuffer->getMaxLength());
+    this->deleteLines(1, this->height, 1);
+    this->moveTo(1, this->height);
 
-    std::cout << std::format("\x1b[{};1H", this->height - 1);
-    std::cout << std::string(this->width, 223) << std::endl;
-    std::cout << std::format("\x1b[{};{}H {} ", this->height - 1, this->width - length.length() - 4, length);
+    if(!typed) std::cout << "\x1b[38;2;170;170;170m" << buffer << "\x1b[0m";
+    else std::cout << buffer;
+
+    this->moveTo(textPos, this->height);
+    std::cout << "\x1b[7m" << lengthText << "\x1b[0m";
 }
 
-bool Console::shouldQuit() {
-    return quitable;
+void Console::deleteLines(int x, int y, int lines) {
+    std::cout << std::format("\x1b[{0};{1}H\x1b[{2}M\x1b[{2}L", y, x, lines);
 }
 
-bool Console::hasMessagesChanged() {
-    if(!this->messagesChanged) return false;
-
-    this->messagesChanged = false;
-    return true;
+void Console::moveTo(int x, int y) {
+    std::cout << std::format("\x1b[{};{}H", y, x);
 }
-
-bool Console::hasResized() {
-    if(!this->resized) return false;
-
-    this->resized = false;
-    return true;
-}
-
-bool Console::hasInputBufferChanged() {
-    if(!this->inputBufferChanged) return false;
-
-    this->inputBufferChanged = false;
-    return true;
-}
-
-
-

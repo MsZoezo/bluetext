@@ -26,17 +26,19 @@ private:
     void onKeyEvent(_KEY_EVENT_RECORD event);
     void onResizeEvent(_WINDOW_BUFFER_SIZE_RECORD event);
 
+    void renderDecorations();
+    void renderMessageArea();
+    void renderInputArea();
+
+    void deleteLines(int x, int y, int lines);
+    void moveTo(int x, int y);
+
 public:
     void handleEvents();
 
     bool shouldQuit();
-    bool hasMessagesChanged();
-    bool hasResized();
-    bool hasInputBufferChanged();
 
-    void redrawFull();
-    void redrawMessageArea();
-    void redrawInputArea();
+    void render(bool force = false);
 
     Console();
     ~Console();
