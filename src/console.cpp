@@ -1,5 +1,6 @@
 #include <iostream>
 #include <format>
+#include <optional>
 #include "console.h"
 
 Console::Console() {
@@ -23,6 +24,8 @@ Console::Console() {
     // Switch to alternate buffer.
     std::cout << "\x1b[?1049h";
 
+    this->inputBuffer = new InputBuffer(100);
+
     this->redrawFull();
 }
 
@@ -44,6 +47,8 @@ void Console::handleEvents() {
     INPUT_RECORD buffer[128];
     DWORD read, i;
 
+    std::optional<WINDOW_BUFFER_SIZE_RECORD> resizeEvent = std::nullopt;
+
     ReadConsoleInput(in, buffer, 128, &read);
 
     for(i = 0; i < read; i++) {
@@ -54,9 +59,12 @@ void Console::handleEvents() {
                 break;
 
             case WINDOW_BUFFER_SIZE_EVENT:
+                resizeEvent = buffer[i].Event.WindowBufferSizeEvent;
                 break;
         }
     }
+
+    if(resizeEvent) this->onResizeEvent(resizeEvent.value());
 }
 
 void Console::onKeyEvent(_KEY_EVENT_RECORD event) {
@@ -65,10 +73,33 @@ void Console::onKeyEvent(_KEY_EVENT_RECORD event) {
         return;
     }
 
-    if(event.uChar.AsciiChar < 32 || event.uChar.AsciiChar > 126 || !event.bKeyDown) return;
+    if (!event.bKeyDown) return;
 
-    this->messages.push_back(new Message(std::format("'{}', {} pressed", event.uChar.AsciiChar, event.wVirtualKeyCode)));
-    this->messagesChanged = true;
+    if(event.wVirtualKeyCode == 8) {
+        this->inputBuffer->remove();
+        this->inputBufferChanged = true;
+        return;
+    }
+
+    if(event.wVirtualKeyCode == 13) {
+        this->messages.push_back(new Message(this->inputBuffer->retrieve()));
+        this->inputBuffer->clear();
+        this->inputBufferChanged = true;
+        this->messagesChanged = true;
+        return;
+    }
+
+    if(event.uChar.AsciiChar < 32 || event.uChar.AsciiChar > 126) return;
+
+    this->inputBuffer->add(event.uChar.AsciiChar);
+    this->inputBufferChanged = true;
+}
+
+void Console::onResizeEvent(_WINDOW_BUFFER_SIZE_RECORD event) {
+    this->width = event.dwSize.X;
+    this->height = event.dwSize.Y;
+
+    this->resized = true;
 }
 
 void Console::redrawFull() {
@@ -81,48 +112,58 @@ void Console::redrawFull() {
 
     std::cout << std::format("\x1b[1;{}H", pos) << (char) 221 << name << (char) 222 << std::endl;
 
-    std::cout << std::format("\x1b[{};1H", this->height - 1);
-    std::cout << std::string(this->width, 223) << std::endl;
-
     this->redrawMessageArea();
+    this->redrawInputArea();
+
+    // If we've rerendered it already we just pretend nothings changed hehe
+    this->messagesChanged = false;
+    this->inputBufferChanged = false;
 }
 
 void Console::redrawMessageArea() {
-    // First we 'clear' the area
-    // We calculate how much space we need / can handle
-    // we print that section
-    try {
-        int capacity = this->width * (this->height - 3);
+    int capacity = this->width * (this->height - 3);
 
-        std::cout << std::format("\x1b[2;1H{}", std::string(capacity, ' '));
+    std::cout << std::format("\x1b[2;1H{}", std::string(capacity, ' '));
 
-        std::string printable;
-        int index = this->messages.size() - 1;
+    std::string printable;
+    int index = this->messages.size() - 1;
 
-        int lines = this->height - 3;
-        while(lines > 0 && index >= 0) {
-            Message* message = messages.at(index);
+    int lines = this->height - 3;
 
-            int length = message->getLength();
-            int usedLines = ceil((double) length / (double) width);
 
-            std::string content;
+    while(lines > 0 && index >= 0) {
+        Message* message = messages.at(index);
 
-            if(lines - usedLines < 0) content = message->getContent().substr(usedLines - lines * width);
-            else content = message->getContent();
+        int length = message->getLength();
+        int usedLines = ceil((double) length / (double) width);
 
-            if(length % width != 0) printable.insert(0, "\n");
-            printable.insert(0, content);
+        std::string content;
 
-            index--;
-            lines = lines - usedLines;
-        }
+        if(lines - usedLines < 0) content = message->getContent().substr(usedLines - lines * width);
+        else content = message->getContent();
 
-        std::cout << "\x1b[2;1H" << printable;
+        if(length % width != 0) printable.insert(0, "\n");
+        printable.insert(0, content);
 
-    } catch(std::exception& exception) {
-        std::cout << exception.what();
+        index--;
+        lines = lines - usedLines;
     }
+
+    std::cout << "\x1b[2;1H" << printable;
+}
+
+void Console::redrawInputArea() {
+    std::string buffer = this->inputBuffer->retrieve(this->width);
+
+    std::string position = std::format("\x1b[{};1H", this->height);
+
+    std::cout << position << std::string(this->width, ' ') << position << buffer;
+
+    std::string length = std::format("{}/{}", inputBuffer->getLength(), inputBuffer->getMaxLength());
+
+    std::cout << std::format("\x1b[{};1H", this->height - 1);
+    std::cout << std::string(this->width, 223) << std::endl;
+    std::cout << std::format("\x1b[{};{}H {} ", this->height - 1, this->width - length.length() - 4, length);
 }
 
 bool Console::shouldQuit() {
@@ -130,8 +171,25 @@ bool Console::shouldQuit() {
 }
 
 bool Console::hasMessagesChanged() {
-    if(!messagesChanged) return false;
+    if(!this->messagesChanged) return false;
 
     this->messagesChanged = false;
     return true;
 }
+
+bool Console::hasResized() {
+    if(!this->resized) return false;
+
+    this->resized = false;
+    return true;
+}
+
+bool Console::hasInputBufferChanged() {
+    if(!this->inputBufferChanged) return false;
+
+    this->inputBufferChanged = false;
+    return true;
+}
+
+
+

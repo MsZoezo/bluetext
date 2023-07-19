@@ -16,7 +16,9 @@ int main() {
 
         console.handleEvents();
 
+        if(console.hasResized()) console.redrawFull();
         if(console.hasMessagesChanged()) console.redrawMessageArea();
+        if(console.hasInputBufferChanged()) console.redrawInputArea();
     }
 
     return 0;
