@@ -5,6 +5,7 @@
 #include <vector>
 #include "message.h"
 #include "inputBuffer.h"
+#include "messageCollection.h"
 
 class Console {
 private:
@@ -12,12 +13,12 @@ private:
     DWORD oldMode;
     int width, height;
 
+    std::string name;
+
     InputBuffer* inputBuffer;
+    MessageCollection& messageCollection;
 
     bool quitable = false;
-
-    std::vector<Message*> messages;
-    bool messagesChanged = false;
 
     bool resized = false;
 
@@ -33,6 +34,8 @@ private:
     void deleteLines(int x, int y, int lines);
     void moveTo(int x, int y);
 
+    std::optional<Message*> latest = std::nullopt;
+
 public:
     void handleEvents();
 
@@ -40,8 +43,10 @@ public:
 
     void render(bool force = false);
 
-    Console();
+    Console(MessageCollection& messageCollection, std::string name);
     ~Console();
+
+    std::optional<Message*> getLatest();
 };
 
 

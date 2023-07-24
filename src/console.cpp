@@ -3,7 +3,7 @@
 #include <optional>
 #include "console.h"
 
-Console::Console() {
+Console::Console(MessageCollection& messageCollection, std::string name) : messageCollection{messageCollection}, name{name} {
     this->in = GetStdHandle(STD_INPUT_HANDLE);
     if(in == INVALID_HANDLE_VALUE) throw std::exception("A fatal error occurred while getting the input handle.");
 
@@ -82,10 +82,12 @@ void Console::onKeyEvent(_KEY_EVENT_RECORD event) {
     }
 
     if(event.wVirtualKeyCode == 13) {
-        this->messages.push_back(new Message(this->inputBuffer->retrieve()));
+        Message* message = new Message(std::format("{} > {}", this->name, this->inputBuffer->retrieve()));
+        latest = message;
+
+        this->messageCollection.push(message);
         this->inputBuffer->clear();
         this->inputBufferChanged = true;
-        this->messagesChanged = true;
         return;
     }
 
@@ -108,10 +110,10 @@ bool Console::shouldQuit() {
 
 void Console::render(bool force) {
     if(this->resized || force) this->renderDecorations();
-    if(this->resized || this->messagesChanged || force) this->renderMessageArea();
+    if(this->messageCollection.hasChanged() || this->resized || force) this->renderMessageArea();
     if(this->resized || this->inputBufferChanged || force) this->renderInputArea();
 
-    this->resized = false, this->messagesChanged = false, this->inputBufferChanged = false;
+    this->resized = false, this->inputBufferChanged = false;
 }
 
 void Console::renderDecorations() {
@@ -133,11 +135,11 @@ void Console::renderMessageArea() {
     this->moveTo(1, 2);
 
     std::string printable;
-    int index = this->messages.size() - 1;
+    int index = this->messageCollection.size() - 1;
     int lines = this->height - 3;
 
     while(lines > 0 && index >= 0) {
-        Message* message = messages.at(index);
+        Message* message = this->messageCollection[index];
 
         int length = message->getLength();
         int usedLines = ceil((double) length / (double) width);
@@ -185,4 +187,13 @@ void Console::deleteLines(int x, int y, int lines) {
 
 void Console::moveTo(int x, int y) {
     std::cout << std::format("\x1b[{};{}H", y, x);
+}
+
+std::optional<Message*> Console::getLatest() {
+    if(!this->latest) return std::nullopt;
+
+    std::optional<Message*> message = this->latest;
+    this->latest = std::nullopt;
+
+    return message;
 }
