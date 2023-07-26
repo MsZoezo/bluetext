@@ -5,11 +5,16 @@
 #include "console.h"
 #include "networkables/bluetooth/btClient.h"
 #include "input/inputHandler.h"
+#include "commandHandler.h"
+#include "commands/helloCommand.h"
 
 int main(int argc, char** argv) {
     MessageCollection messageCollection;
 
     InputHandler inputHandler(500);
+
+    CommandHandler commandHandler(messageCollection);
+    commandHandler.addCommand(new HelloCommand);
 
     Networkable* networkable;
     std::string name;
@@ -52,10 +57,14 @@ int main(int argc, char** argv) {
 
         auto string = inputHandler.getUnhandledString();
         if(string) {
-            Message* message = new Message(std::format("{} > {}", name, string.value()));
+            if(string.value().starts_with('/')) {
+                commandHandler.run(string.value());
+            } else {
+                Message* message = new Message(std::format("{} > {}", name, string.value()));
 
-            messageCollection.push(message);
-            networkable->send(message);
+                messageCollection.push(message);
+                networkable->send(message);
+            }
         }
 
         console.handleEvents();
