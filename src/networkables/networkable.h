@@ -1,6 +1,6 @@
 
-#ifndef BLUETEXT_CLIENT_H
-#define BLUETEXT_CLIENT_H
+#ifndef BLUETEXT_NETWORKABLE_H
+#define BLUETEXT_NETWORKABLE_H
 
 #include <format>
 #include <WinSock2.h>
@@ -8,7 +8,7 @@
 #include <ws2bth.h>
 #include "../messageCollection.h"
 
-class Client {
+class Networkable {
 
 protected:
     MessageCollection& messageCollection;
@@ -16,12 +16,12 @@ protected:
     virtual void receive() = 0;
 
 public:
-    Client(MessageCollection& messageCollection);
-    ~Client();
+    Networkable(MessageCollection& messageCollection);
+    ~Networkable();
 
     virtual void send(Message* message) = 0;
     virtual void handle() = 0;
 };
 
 
-#endif //BLUETEXT_CLIENT_H
+#endif //BLUETEXT_NETWORKABLE_H

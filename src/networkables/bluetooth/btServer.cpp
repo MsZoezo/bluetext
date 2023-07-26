@@ -1,14 +1,14 @@
 
-#include "hostClient.h"
+#include "btServer.h"
 
-HostClient::HostClient(MessageCollection& messageCollection) : Client(messageCollection) {
+BTServer::BTServer(MessageCollection& messageCollection) : Networkable(messageCollection) {
     int family = AF_BTH;
     int type = SOCK_STREAM;
     int protocol = BTHPROTO_RFCOMM;
 
     this->hostSocket = socket(family, type, protocol);
 
-    if(this->hostSocket == INVALID_SOCKET) throw std::exception(std::format("Initializing host socket failed. Error code -> {}", WSAGetLastError()).c_str());
+    if(this->hostSocket == INVALID_SOCKET) throw std::runtime_error(std::format("Initializing host socket failed. Error code -> {}", WSAGetLastError()).c_str());
 
     SOCKADDR_BTH hint;
     int size = sizeof hint;
@@ -30,11 +30,11 @@ HostClient::HostClient(MessageCollection& messageCollection) : Client(messageCol
                 errorMessage = std::format("Failed to bind host socket. Error code -> {}", errorCode);
         }
 
-        throw std::exception(errorMessage.c_str());
+        throw std::runtime_error(errorMessage.c_str());
     }
 
-    if(listen(hostSocket, SOMAXCONN) == SOCKET_ERROR) throw std::exception(std::format("Failed to listen on host socket. Error code -> {}", WSAGetLastError()).c_str());
-    if(getsockname(hostSocket, (sockaddr*) &hint, &size) == SOCKET_ERROR) throw std::exception(std::format("Failed to retrieve address. Error code -> {}", WSAGetLastError()).c_str());
+    if(listen(hostSocket, SOMAXCONN) == SOCKET_ERROR) throw std::runtime_error(std::format("Failed to listen on host socket. Error code -> {}", WSAGetLastError()).c_str());
+    if(getsockname(hostSocket, (sockaddr*) &hint, &size) == SOCKET_ERROR) throw std::runtime_error(std::format("Failed to retrieve address. Error code -> {}", WSAGetLastError()).c_str());
 
     GUID guid;
     CoCreateGuid(&guid);
@@ -59,12 +59,12 @@ HostClient::HostClient(MessageCollection& messageCollection) : Client(messageCol
 
     unsigned long ul = 1;
 
-    if(ioctlsocket(hostSocket, FIONBIO, (unsigned long *) &ul) == SOCKET_ERROR) throw std::exception(std::format("An error occured while setting the socket to non-blocking, error code -> {}", WSAGetLastError()).c_str());
+    if(ioctlsocket(hostSocket, FIONBIO, (unsigned long *) &ul) == SOCKET_ERROR) throw std::runtime_error(std::format("An error occured while setting the socket to non-blocking, error code -> {}", WSAGetLastError()).c_str());
 
     this->messageCollection.push(new Message(std::format("Ready for connections, ip is {:#016X}", hint.btAddr)));
 }
 
-void HostClient::send(Message* message) {
+void BTServer::send(Message* message) {
     for(auto remote : this->remotes) {
         if(remote == nullptr) continue;
 
@@ -72,7 +72,7 @@ void HostClient::send(Message* message) {
     }
 }
 
-void HostClient::receive() {
+void BTServer::receive() {
     for(auto remote : this->remotes) {
         if (remote == nullptr) continue;
 
@@ -82,7 +82,7 @@ void HostClient::receive() {
     }
 }
 
-void HostClient::acceptRemote() {
+void BTServer::acceptRemote() {
     // 1. check for an empty spot in remotes array
     // 2. try to accept a new connection
     // 3. initialize remote instance
@@ -117,7 +117,7 @@ void HostClient::acceptRemote() {
     this->messageCollection.push(new Message("Someone new arrived!"));
 }
 
-void HostClient::handle() {
+void BTServer::handle() {
     this->acceptRemote();
 
     bool hasSocket = false;

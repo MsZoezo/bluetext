@@ -1,22 +1,23 @@
 #include <iostream>
 #include <format>
 #include <optional>
+#include <cmath>
 #include "console.h"
 
 Console::Console(MessageCollection& messageCollection, std::string name) : messageCollection{messageCollection}, name{name} {
     this->in = GetStdHandle(STD_INPUT_HANDLE);
-    if(in == INVALID_HANDLE_VALUE) throw std::exception("A fatal error occurred while getting the input handle.");
+    if(in == INVALID_HANDLE_VALUE) throw std::runtime_error("A fatal error occurred while getting the input handle.");
 
     this->out = GetStdHandle(STD_OUTPUT_HANDLE);
-    if(out == INVALID_HANDLE_VALUE) throw std::exception("A fatal error occurred while getting the output handle.");
+    if(out == INVALID_HANDLE_VALUE) throw std::runtime_error("A fatal error occurred while getting the output handle.");
 
-    if(GetConsoleMode(this->in, &oldMode) == 0) throw std::exception(std::format("A fatal error occurred while getting console mode. Error -> {}", GetLastError()).c_str());
+    if(GetConsoleMode(this->in, &oldMode) == 0) throw std::runtime_error(std::format("A fatal error occurred while getting console mode. Error -> {}", GetLastError()).c_str());
 
     DWORD mode = ENABLE_WINDOW_INPUT;
-    if(SetConsoleMode(this->in, mode) == 0) throw std::exception(std::format("A fatal error occurred while setting console mode. Error -> {}", GetLastError()).c_str());
+    if(SetConsoleMode(this->in, mode) == 0) throw std::runtime_error(std::format("A fatal error occurred while setting console mode. Error -> {}", GetLastError()).c_str());
 
     CONSOLE_SCREEN_BUFFER_INFO info;
-    if(GetConsoleScreenBufferInfo(this->out, &info) == 0) throw std::exception(std::format("A fatal error occurred while trying to get console screen buffer info. Error -> {}", GetLastError()).c_str());
+    if(GetConsoleScreenBufferInfo(this->out, &info) == 0) throw std::runtime_error(std::format("A fatal error occurred while trying to get console screen buffer info. Error -> {}", GetLastError()).c_str());
 
     this->width = info.srWindow.Right + 1;
     this->height = info.srWindow.Bottom + 1;

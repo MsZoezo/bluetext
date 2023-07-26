@@ -1,13 +1,13 @@
 #include <iostream>
 #include <sstream>
-#include "clients/hostClient.h"
+#include "networkables/bluetooth/btServer.h"
 #include "console.h"
-#include "clients/guestClient.h"
+#include "networkables/bluetooth/btClient.h"
 
 int main(int argc, char** argv) {
     MessageCollection messageCollection;
 
-    Client* client;
+    Networkable* networkable;
     std::string name;
 
     try {
@@ -17,10 +17,10 @@ int main(int argc, char** argv) {
             iss >> std::hex >> ip;
 
             name = argv[3];
-            client = new GuestClient(messageCollection, ip);
+            networkable = new BTClient(messageCollection, ip);
         }
         else if(argc >= 3 && strcmp(argv[1], "host") == 0) {
-            client = new HostClient(messageCollection);
+            networkable = new BTServer(messageCollection);
             name = argv[2];
         }
         else {
@@ -44,10 +44,10 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        client->handle();
+        networkable->handle();
 
         auto message = console.getLatest();
-        if(message) client->send(message.value());
+        if(message) networkable->send(message.value());
 
         console.handleEvents();
         console.render();

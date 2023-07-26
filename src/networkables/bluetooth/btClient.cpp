@@ -1,14 +1,14 @@
 
-#include "guestClient.h"
+#include "btClient.h"
 
-GuestClient::GuestClient(MessageCollection &messageCollection, ULONGLONG ip) : Client(messageCollection) {
+BTClient::BTClient(MessageCollection &messageCollection, ULONGLONG ip) : Networkable(messageCollection) {
     int family = AF_BTH;
     int type = SOCK_STREAM;
     int protocol = BTHPROTO_RFCOMM;
 
     SOCKET guestSocket = socket(family, type, protocol);
 
-    if(guestSocket == INVALID_SOCKET) throw std::exception(std::format("Initializing guest socket failed. Error code -> {}", WSAGetLastError()).c_str());
+    if(guestSocket == INVALID_SOCKET) throw std::runtime_error(std::format("Initializing guest socket failed. Error code -> {}", WSAGetLastError()).c_str());
 
     SOCKADDR_BTH hint;
     memset(&hint, 0, sizeof hint);
@@ -17,25 +17,25 @@ GuestClient::GuestClient(MessageCollection &messageCollection, ULONGLONG ip) : C
     hint.btAddr = BTH_ADDR(ip);
     hint.serviceClassId = RFCOMM_PROTOCOL_UUID;
 
-    if(connect(guestSocket, (sockaddr *) &hint, sizeof hint) == SOCKET_ERROR) throw std::exception(std::format("Failed to connect. Error code -> {}", WSAGetLastError()).c_str());
+    if(connect(guestSocket, (sockaddr *) &hint, sizeof hint) == SOCKET_ERROR) throw std::runtime_error(std::format("Failed to connect. Error code -> {}", WSAGetLastError()).c_str());
 
     this->messageCollection.push(new Message("Connected to host!"));
 
     unsigned long ul = 1;
 
-    if(ioctlsocket(guestSocket, FIONBIO, (unsigned long *) &ul) == SOCKET_ERROR) throw std::exception(std::format("An error occured while setting the socket to non-blocking, error code -> {}", WSAGetLastError()).c_str());
+    if(ioctlsocket(guestSocket, FIONBIO, (unsigned long *) &ul) == SOCKET_ERROR) throw std::runtime_error(std::format("An error occured while setting the socket to non-blocking, error code -> {}", WSAGetLastError()).c_str());
 
 
     this->remote = new Remote(guestSocket, 999);
 }
 
-void GuestClient::send(Message* message) {
+void BTClient::send(Message* message) {
     if(this->remote == nullptr) return;
 
     this->remote->sendQueue.push(message);
 }
 
-void GuestClient::receive() {
+void BTClient::receive() {
     if(this->remote == nullptr) return;
 
     if(this->remote->receiveQueue.empty()) return;
@@ -43,7 +43,7 @@ void GuestClient::receive() {
     this->remote->receiveQueue.pop();
 }
 
-void GuestClient::handle() {
+void BTClient::handle() {
     if(this->remote == nullptr) return;
 
     if(!this->remote->isConnected()) {
