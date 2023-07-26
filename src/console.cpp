@@ -4,7 +4,7 @@
 #include <cmath>
 #include "console.h"
 
-Console::Console(MessageCollection& messageCollection, std::string name) : messageCollection{messageCollection}, name{name} {
+Console::Console(InputHandler& inputHandler, MessageCollection& messageCollection, std::string name) : inputHandler{inputHandler}, inputBuffer{inputHandler.getInputBuffer()},  messageCollection{messageCollection}, name{name} {
     this->in = GetStdHandle(STD_INPUT_HANDLE);
     if(in == INVALID_HANDLE_VALUE) throw std::runtime_error("A fatal error occurred while getting the input handle.");
 
@@ -24,8 +24,6 @@ Console::Console(MessageCollection& messageCollection, std::string name) : messa
 
     // Switch to alternate buffer.
     std::cout << "\x1b[?1049h";
-
-    this->inputBuffer = new InputBuffer(100);
 
     this->render(true);
 }
@@ -76,25 +74,7 @@ void Console::onKeyEvent(_KEY_EVENT_RECORD event) {
 
     if (!event.bKeyDown) return;
 
-    if(event.wVirtualKeyCode == 8) {
-        this->inputBuffer->remove();
-        this->inputBufferChanged = true;
-        return;
-    }
-
-    if(event.wVirtualKeyCode == 13) {
-        Message* message = new Message(std::format("{} > {}", this->name, this->inputBuffer->retrieve()));
-        latest = message;
-
-        this->messageCollection.push(message);
-        this->inputBuffer->clear();
-        this->inputBufferChanged = true;
-        return;
-    }
-
-    if(event.uChar.AsciiChar < 32 || event.uChar.AsciiChar > 126) return;
-
-    this->inputBuffer->add(event.uChar.AsciiChar);
+    this->inputHandler.handleInputEvent(event);
     this->inputBufferChanged = true;
 }
 
@@ -188,13 +168,4 @@ void Console::deleteLines(int x, int y, int lines) {
 
 void Console::moveTo(int x, int y) {
     std::cout << std::format("\x1b[{};{}H", y, x);
-}
-
-std::optional<Message*> Console::getLatest() {
-    if(!this->latest) return std::nullopt;
-
-    std::optional<Message*> message = this->latest;
-    this->latest = std::nullopt;
-
-    return message;
 }

@@ -4,8 +4,9 @@
 #include <windows.h>
 #include <vector>
 #include "message.h"
-#include "inputBuffer.h"
+#include "input/inputBuffer.h"
 #include "messageCollection.h"
+#include "input/inputHandler.h"
 
 class Console {
 private:
@@ -15,7 +16,8 @@ private:
 
     std::string name;
 
-    InputBuffer* inputBuffer;
+    InputHandler& inputHandler;
+    const InputBuffer* inputBuffer;
     MessageCollection& messageCollection;
 
     bool quitable = false;
@@ -34,8 +36,6 @@ private:
     void deleteLines(int x, int y, int lines);
     void moveTo(int x, int y);
 
-    std::optional<Message*> latest = std::nullopt;
-
 public:
     void handleEvents();
 
@@ -43,10 +43,8 @@ public:
 
     void render(bool force = false);
 
-    Console(MessageCollection& messageCollection, std::string name);
+    Console(InputHandler& inputHandler, MessageCollection& messageCollection, std::string name);
     ~Console();
-
-    std::optional<Message*> getLatest();
 };
 
 

@@ -1,11 +1,15 @@
+#include <format>
 #include <iostream>
 #include <sstream>
 #include "networkables/bluetooth/btServer.h"
 #include "console.h"
 #include "networkables/bluetooth/btClient.h"
+#include "input/inputHandler.h"
 
 int main(int argc, char** argv) {
     MessageCollection messageCollection;
+
+    InputHandler inputHandler(500);
 
     Networkable* networkable;
     std::string name;
@@ -32,7 +36,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    Console console(messageCollection, name);
+    Console console(inputHandler, messageCollection, name);
 
     bool running = true;
 
@@ -46,8 +50,13 @@ int main(int argc, char** argv) {
 
         networkable->handle();
 
-        auto message = console.getLatest();
-        if(message) networkable->send(message.value());
+        auto string = inputHandler.getUnhandledString();
+        if(string) {
+            Message* message = new Message(std::format("{} > {}", name, string.value()));
+
+            messageCollection.push(message);
+            networkable->send(message);
+        }
 
         console.handleEvents();
         console.render();

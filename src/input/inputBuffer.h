@@ -11,17 +11,21 @@ private:
 
 public:
     InputBuffer(int maxLength);
+
+    InputBuffer();
+
     ~InputBuffer();
 
     void add(char character);
     void remove();
+    void removeWord();
 
     void clear();
 
-    int getLength();
-    int getMaxLength();
+    int getLength() const;
+    int getMaxLength() const;
 
-    std::string& retrieve(int maxLength = 0);
+    std::string & retrieve(int maxLength = 0) const;
 };
 
 

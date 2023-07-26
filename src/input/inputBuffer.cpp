@@ -10,7 +10,7 @@ InputBuffer::~InputBuffer() {
     delete[] this->buffer;
 }
 
-std::string& InputBuffer::retrieve(int maxLength) {
+std::string & InputBuffer::retrieve(int maxLength) const {
     // Should check if the size is 0 and throw if it is.
     int offset = 0;
     int length = this->length;
@@ -23,11 +23,11 @@ std::string& InputBuffer::retrieve(int maxLength) {
     return *(new std::string(this->buffer + offset, length));
 }
 
-int InputBuffer::getLength() {
+int InputBuffer::getLength() const {
     return this->length;
 }
 
-int InputBuffer::getMaxLength() {
+int InputBuffer::getMaxLength() const {
     return this->maxLength;
 }
 
@@ -42,6 +42,14 @@ void InputBuffer::remove() {
     if(this->length == 0) return;
     this->length--;
 }
+
+void InputBuffer::removeWord() {
+    int index = this->length;
+    while (index >= 0 && this->buffer[index] != ' ') index--;
+
+    this->length = index + 1;
+}
+
 
 void InputBuffer::clear() {
     this->length = 0;
