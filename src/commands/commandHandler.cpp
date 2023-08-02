@@ -2,12 +2,14 @@
 #include <sstream>
 #include "commandHandler.h"
 
-void CommandHandler::addCommand(Command *command) {
+CommandHandler& CommandHandler::addCommand(Command *command) {
     this->commands.insert(std::make_pair(command->getName(), command));
+
+    return *this;
 }
 
 void CommandHandler::run(std::string rawString) {
-    std::vector<std::string> args;
+    std::list<std::string> args;
 
 
     std::stringstream stream(rawString);
@@ -23,6 +25,12 @@ void CommandHandler::run(std::string rawString) {
 
     commandName.erase(0, 1);
 
+    if(commandName == "help") {
+        this->messageCollection.push(new Message("--- List of all commands ---"));
+        for(auto& command : this->commands) this->messageCollection.push(new Message(command.second->getUsage()));
+        return;
+    }
+
     if(!this->commands.contains(commandName)) {
         this->messageCollection.push(new Message("This Command doesn't exist!"));
         return;
@@ -30,7 +38,7 @@ void CommandHandler::run(std::string rawString) {
 
     Command* command = this->commands.find(commandName)->second;
 
-    command->run(this->messageCollection, args);
+    command->run(this->messageCollection, programState, args);
 }
 
-CommandHandler::CommandHandler(MessageCollection& messageCollection) : messageCollection{messageCollection} {}
+CommandHandler::CommandHandler(MessageCollection& messageCollection, ProgramState& programState) : messageCollection{messageCollection}, programState{programState} {}

@@ -4,7 +4,7 @@
 #include <cmath>
 #include "console.h"
 
-Console::Console(InputHandler& inputHandler, MessageCollection& messageCollection, std::string name) : inputHandler{inputHandler}, inputBuffer{inputHandler.getInputBuffer()},  messageCollection{messageCollection}, name{name} {
+Console::Console(InputHandler& inputHandler, MessageCollection& messageCollection) : inputHandler{inputHandler}, inputBuffer{inputHandler.getInputBuffer()},  messageCollection{messageCollection} {
     this->in = GetStdHandle(STD_INPUT_HANDLE);
     if(in == INVALID_HANDLE_VALUE) throw std::runtime_error("A fatal error occurred while getting the input handle.");
 

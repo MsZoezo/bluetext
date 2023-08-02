@@ -14,8 +14,6 @@ private:
     DWORD oldMode;
     int width, height;
 
-    std::string name;
-
     InputHandler& inputHandler;
     const InputBuffer* inputBuffer;
     MessageCollection& messageCollection;
@@ -43,7 +41,7 @@ public:
 
     void render(bool force = false);
 
-    Console(InputHandler& inputHandler, MessageCollection& messageCollection, std::string name);
+    Console(InputHandler& inputHandler, MessageCollection& messageCollection);
     ~Console();
 };
 

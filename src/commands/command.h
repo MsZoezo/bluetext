@@ -4,18 +4,22 @@
 
 
 #include <string>
+#include <list>
 #include "../messageCollection.h"
+#include "../programState.h"
 
 class Command {
 protected:
     std::string name;
+    std::string usage;
 
 public:
-    Command(std:: string name);
+    Command(std::string name, std::string usage);
 
     const std::string& getName() const;
+    const std::string& getUsage() const;
 
-    virtual void run(MessageCollection& messageCollection, std::vector<std::string> args) = 0;
+    virtual void run(MessageCollection& messageCollection, ProgramState& programState, std::list<std::string> args) = 0;
 };
 
 

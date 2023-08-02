@@ -5,47 +5,35 @@
 #include "console.h"
 #include "networkables/bluetooth/btClient.h"
 #include "input/inputHandler.h"
-#include "commandHandler.h"
-#include "commands/helloCommand.h"
+#include "commands/commandHandler.h"
+#include "programState.h"
+#include "commands/nameCommand.h"
+#include "commands/hostCommand.h"
+#include "commands/stopCommand.h"
+#include "commands/clearCommand.h"
+#include "commands/JoinCommand.h"
 
 int main(int argc, char** argv) {
     MessageCollection messageCollection;
 
     InputHandler inputHandler(500);
 
-    CommandHandler commandHandler(messageCollection);
-    commandHandler.addCommand(new HelloCommand);
+    ProgramState programState;
 
-    Networkable* networkable;
-    std::string name;
+    CommandHandler commandHandler(messageCollection, programState);
 
-    try {
-        if(argc >= 4 && strcmp(argv[1], "guest") == 0) {
-            ULONGLONG ip;
-            std::istringstream iss(argv[2]);
-            iss >> std::hex >> ip;
+    commandHandler
+        .addCommand(new NameCommand)
+        .addCommand(new HostCommand)
+        .addCommand(new JoinCommand)
+        .addCommand(new StopCommand)
+        .addCommand(new ClearCommand);
 
-            name = argv[3];
-            networkable = new BTClient(messageCollection, ip);
-        }
-        else if(argc >= 3 && strcmp(argv[1], "host") == 0) {
-            networkable = new BTServer(messageCollection);
-            name = argv[2];
-        }
-        else {
-            std::cout << "\x1b[31m" << "usage: host <name> OR guest <ip> <name>" << "\x1b[0m"  << std::endl;
-            return 1;
-        }
-    } catch(std::exception& exception) {
-        std::cout << exception.what() << std::endl;
-        return -1;
-    }
-
-    Console console(inputHandler, messageCollection, name);
+    Console console(inputHandler, messageCollection);
 
     bool running = true;
 
-    messageCollection.push(new Message("Welcome to bluetext!"));
+    messageCollection.push(new Message("Welcome to bluetext! type /help for help!"));
 
     while (running) {
         if(console.shouldQuit()) {
@@ -53,17 +41,17 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        networkable->handle();
+         if(programState.networkable) programState.networkable.value()->handle();
 
         auto string = inputHandler.getUnhandledString();
         if(string) {
             if(string.value().starts_with('/')) {
                 commandHandler.run(string.value());
             } else {
-                Message* message = new Message(std::format("{} > {}", name, string.value()));
+                Message* message = new Message(std::format("{} > {}", programState.name, string.value()));
 
                 messageCollection.push(message);
-                networkable->send(message);
+                if(programState.networkable) programState.networkable.value()->send(message);
             }
         }
 

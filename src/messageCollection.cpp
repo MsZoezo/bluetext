@@ -22,3 +22,10 @@ bool MessageCollection::hasChanged() {
     return true;
 }
 
+void MessageCollection::clear() {
+    for(auto& message : this->messages) delete message;
+    messages.clear();
+
+    this->collectionChanged = true;
+}
+

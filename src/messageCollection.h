@@ -20,6 +20,8 @@ public:
     int size();
 
     bool hasChanged();
+
+    void clear();
 };
 
 

@@ -4,18 +4,20 @@
 
 
 #include <map>
-#include "commands/command.h"
+#include "command.h"
+#include "../programState.h"
 
 class CommandHandler {
 private:
     std::map<std::string, Command*> commands;
 
     MessageCollection& messageCollection;
+    ProgramState& programState;
 
 public:
-    CommandHandler(MessageCollection& messageCollection);
+    CommandHandler(MessageCollection& messageCollection, ProgramState& programState);
 
-    void addCommand(Command* command);
+    CommandHandler& addCommand(Command* command);
 
     void run(std::string rawString);
 };
